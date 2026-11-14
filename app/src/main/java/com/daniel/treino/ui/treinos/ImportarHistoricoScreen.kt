@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -192,7 +193,7 @@ fun ImportarHistoricoScreen(voltar: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Importar do Excel", style = MaterialTheme.typography.titleMedium) },
+                title = { Text("Importar treinos", style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = voltar) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -276,51 +277,39 @@ fun ImportarHistoricoScreen(voltar: () -> Unit) {
 @Composable
 private fun InstrucoesImportacao(aoEscolher: () -> Unit) {
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             Text(
-                "Traga seus treinos anotados em planilha (.xlsx) para o histórico do app.",
+                "Traga treinos já feitos a partir de uma planilha do Excel (.xlsx) ou CSV. Cada linha é uma série; as linhas da mesma data viram um treino concluído naquele dia.",
                 style = MaterialTheme.typography.bodyLarge
             )
         }
 
         item {
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text("Formato esperado", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Uma linha por exercício feito no dia, com 4 colunas na primeira aba:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    ExemploTabela()
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "• Data: dd/mm/aaaa ou célula de data do Excel\n" +
-                            "• Carga: número em kg (deixe vazio se não usou peso)\n" +
-                            "• Repetições: número por série ou formato 3x12\n" +
-                            "• Linhas da mesma data viram um único treino",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            ExemploTabela()
+        }
+
+        item {
+            Text(
+                "A coluna Treino é opcional. Sem ela, o app sugere o treino com mais exercícios em comum e você pode trocar antes de importar. Nada é gravado até você confirmar.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
         item {
             Button(
                 onClick = aoEscolher,
-                modifier = Modifier.fillMaxWidth()
+                shape = CircleShape,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
             ) {
                 Icon(Icons.Outlined.UploadFile, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Selecionar arquivo .xlsx")
+                Spacer(Modifier.width(10.dp))
+                Text("Escolher planilha", style = MaterialTheme.typography.titleMedium)
             }
         }
     }
@@ -329,32 +318,46 @@ private fun InstrucoesImportacao(aoEscolher: () -> Unit) {
 @Composable
 private fun ExemploTabela() {
     val linhas = listOf(
-        listOf("Data", "Exercício", "Carga", "Reps"),
-        listOf("10/03/2026", "Supino reto", "60", "10"),
-        listOf("10/03/2026", "Tríceps corda", "25", "12"),
-        listOf("12/03/2026", "Agachamento", "80", "8")
+        listOf("Data", "Exercício", "Repetições", "Carga", "Treino"),
+        listOf("12/10/2026", "Crucifixo", "8", "79", "Superiores"),
+        listOf("12/10/2026", "Crucifixo", "7", "79", "Superiores")
     )
+    val pesos = listOf(1.1f, 1.3f, 0.9f, 0.7f, 1.0f)
     Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             linhas.forEachIndexed { idx, cols ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 2.dp)
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     cols.forEachIndexed { cIdx, texto ->
+                        val cor = when {
+                            idx == 0 && cIdx == 4 -> MaterialTheme.colorScheme.onSurfaceVariant
+                            idx == 0 -> MaterialTheme.colorScheme.primary
+                            cIdx == 4 -> MaterialTheme.colorScheme.onSurfaceVariant
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
                         Text(
                             texto,
-                            modifier = Modifier.weight(if (cIdx == 1) 1.5f else 1f),
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = if (idx == 0) FontWeight.Bold else FontWeight.Normal
-                            )
+                            modifier = Modifier.weight(pesos[cIdx]),
+                            maxLines = 1,
+                            color = cor,
+                            style = if (idx == 0) {
+                                MaterialTheme.typography.labelMedium
+                            } else {
+                                MaterialTheme.typography.bodySmall
+                            }
                         )
                     }
+                }
+                if (idx < linhas.lastIndex) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
             }
         }

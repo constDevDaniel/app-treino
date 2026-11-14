@@ -1,8 +1,6 @@
 package com.daniel.treino.ui.hoje
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -25,22 +23,22 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.CloudUpload
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,8 +51,6 @@ import com.daniel.treino.data.db.ResumoModelo
 import com.daniel.treino.data.db.Treino
 import com.daniel.treino.ui.components.EmblemaTreino
 import com.daniel.treino.ui.components.Formatadores
-import com.daniel.treino.ui.components.corDoTreino
-import com.daniel.treino.ui.components.corSobre
 import com.daniel.treino.ui.components.escalaPressao
 import java.time.Instant
 import java.time.LocalDate
@@ -68,7 +64,14 @@ import java.time.temporal.ChronoUnit
 private val formatoCabecalho: DateTimeFormatter =
     DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Formatadores.ptBr)
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val formatoDiaMes: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("dd/MM", Formatadores.ptBr)
+
+private data class ConfirmacaoRepetirTreino(
+    val treinoId: Long,
+    val treinoNome: String,
+)
+
 @Composable
 fun HojeScreen(
     abrirSessao: (Long) -> Unit,
@@ -80,6 +83,7 @@ fun HojeScreen(
     )
     val ui by vm.ui.collectAsState()
     val estadoBackup by app.backupArquivo.estado.collectAsState()
+    var confirmacaoRepetir by remember { mutableStateOf<ConfirmacaoRepetirTreino?>(null) }
 
     val dataTexto = remember(vm.hoje) {
         vm.hoje.format(formatoCabecalho).replaceFirstChar {
@@ -94,43 +98,56 @@ fun HojeScreen(
         ui.treinos.filter { it.id != idExcluido }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = dataTexto,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = "Hoje",
-                            style = MaterialTheme.typography.headlineMedium,
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = abrirBackup) {
-                        val configurado = estadoBackup.destino != null
-                        Icon(
-                            imageVector = if (configurado) {
-                                Icons.Outlined.CloudDone
-                            } else {
-                                Icons.Outlined.CloudUpload
-                            },
-                            contentDescription = "Backup",
-                            tint = if (configurado) {
-                                MaterialTheme.colorScheme.tertiary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    fun tentarIniciarTreino(treinoId: Long, treinoNome: String) {
+        val ultima = ui.ultimas[treinoId]
+        val feitoHoje = ultima != null && Instant.ofEpochMilli(ultima)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate() == vm.hoje
+        if (feitoHoje) {
+            confirmacaoRepetir = ConfirmacaoRepetirTreino(treinoId, treinoNome)
+        } else {
+            vm.iniciarTreino(treinoId, abrirSessao)
+        }
+    }
+
+    val repetir = confirmacaoRepetir
+    if (repetir != null) {
+        AlertDialog(
+            onDismissRequest = { confirmacaoRepetir = null },
+            icon = {
+                EmblemaTreino(
+                    treinoId = repetir.treinoId,
+                    nome = repetir.treinoNome,
+                    tamanho = 48.dp,
+                )
+            },
+            title = {
+                Text("${repetir.treinoNome} já foi feito hoje")
+            },
+            text = {
+                Text(
+                    "Você já concluiu este treino hoje. Quer iniciar outra sessão de ${repetir.treinoNome} mesmo assim?",
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        confirmacaoRepetir = null
+                        vm.iniciarTreino(repetir.treinoId, abrirSessao)
+                    },
+                ) {
+                    Text("Iniciar mesmo assim")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmacaoRepetir = null }) {
+                    Text("Cancelar")
+                }
+            },
+        )
+    }
+
+    Scaffold { padding ->
         if (!ui.carregado) {
             Box(
                 modifier = Modifier
@@ -144,9 +161,47 @@ fun HojeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = dataTexto,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = "Hoje",
+                            style = MaterialTheme.typography.displayMedium,
+                        )
+                    }
+                    IconButton(onClick = abrirBackup) {
+                        val configurado = estadoBackup.destino != null
+                        Icon(
+                            imageVector = if (configurado) {
+                                Icons.Outlined.CloudDone
+                            } else {
+                                Icons.Outlined.CloudUpload
+                            },
+                            contentDescription = "Backup",
+                            tint = if (configurado) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    }
+                }
+            }
+
             item {
                 FaixaSemana(
                     semana = ui.semana,
@@ -160,31 +215,38 @@ fun HojeScreen(
                 when {
                     emAndamento != null -> {
                         CartaoDestaque(
-                            etiqueta = "EM ANDAMENTO",
+                            etiqueta = "Treino em andamento",
                             titulo = emAndamento.treinoNome,
                             treinoId = emAndamento.treinoId,
                             resumo = emAndamento.treinoId?.let { ui.resumos[it] },
-                            ultimaVez = null,
+                            ultimaVez = emAndamento.treinoId?.let { id ->
+                                ui.ultimas[id]?.let { formatarUltimaVez(it, vm.hoje) }
+                            },
                             acao = "Continuar treino",
-                            destaqueAtivo = true,
                             aoClicar = { abrirSessao(emAndamento.id) },
                         )
                     }
                     concluidoHoje != null -> {
                         CartaoDestaque(
-                            etiqueta = "CONCLUÍDO HOJE",
+                            etiqueta = "Já feito hoje",
                             titulo = concluidoHoje.treinoNome,
                             treinoId = concluidoHoje.treinoId,
                             resumo = concluidoHoje.treinoId?.let { ui.resumos[it] },
-                            ultimaVez = null,
-                            acao = "Ver treino",
-                            destaqueAtivo = false,
-                            aoClicar = { abrirSessao(concluidoHoje.id) },
+                            ultimaVez = "hoje",
+                            acao = "Iniciar treino",
+                            aoClicar = {
+                                val id = concluidoHoje.treinoId
+                                if (id != null) {
+                                    tentarIniciarTreino(id, concluidoHoje.treinoNome)
+                                } else {
+                                    abrirSessao(concluidoHoje.id)
+                                }
+                            },
                         )
                     }
                     agendado != null -> {
                         CartaoDestaque(
-                            etiqueta = "TREINO DO DIA",
+                            etiqueta = "Agendado para hoje",
                             titulo = agendado.treinoNome,
                             treinoId = agendado.treinoId,
                             resumo = ui.resumos[agendado.treinoId],
@@ -192,9 +254,8 @@ fun HojeScreen(
                                 formatarUltimaVez(it, vm.hoje)
                             },
                             acao = "Iniciar treino",
-                            destaqueAtivo = false,
                             aoClicar = {
-                                vm.iniciarTreino(agendado.treinoId, abrirSessao)
+                                tentarIniciarTreino(agendado.treinoId, agendado.treinoNome)
                             },
                         )
                     }
@@ -206,16 +267,17 @@ fun HojeScreen(
                 }
             }
 
-            if (outrosTreinos.isNotEmpty()) {
+            if (ui.emAndamento == null && outrosTreinos.isNotEmpty()) {
                 item {
                     Text(
                         text = if (ui.agendado != null || concluidoHoje != null) {
-                            "Treinar outro"
+                            "Outros treinos"
                         } else {
                             "Iniciar um treino"
                         },
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(top = 4.dp),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
 
@@ -230,7 +292,7 @@ fun HojeScreen(
                             formatarUltimaVez(it, vm.hoje)
                         },
                         aoIniciar = {
-                            vm.iniciarTreino(treino.id, abrirSessao)
+                            tentarIniciarTreino(treino.id, treino.nome)
                         },
                     )
                 }
@@ -248,23 +310,23 @@ private fun FaixaSemana(
     semana: List<DiaDaSemana>,
     hoje: LocalDate,
 ) {
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.large,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = 8.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             semana.forEach { dia ->
                 val ehHoje = dia.data == hoje
-                val concluido = dia.feito != null
+                val feito = dia.feito
                 val agendado = dia.agendado
+                val treinoId = feito?.treinoId ?: agendado?.treinoId
+                val treinoNome = feito?.treinoNome ?: agendado?.treinoNome ?: ""
                 val letra = dia.data.dayOfWeek
                     .getDisplayName(TextStyle.NARROW, Formatadores.ptBr)
                     .uppercase(Formatadores.ptBr)
@@ -275,68 +337,61 @@ private fun FaixaSemana(
                 ) {
                     Text(
                         text = letra,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelMedium,
                         color = if (ehHoje) {
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.onSurface
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
                     )
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier.size(34.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (treinoId == null || (feito == null && dia.data.isBefore(hoje))) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.outlineVariant),
+                            )
+                        } else {
+                            EmblemaTreino(
+                                treinoId = treinoId,
+                                nome = treinoNome,
+                                tamanho = 32.dp,
+                                preenchido = feito != null,
+                                esmaecido = feito == null,
+                            )
+                        }
+                        if (feito != null) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .size(15.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceContainer),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Concluído",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(11.dp),
+                                )
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(6.dp))
                     Box(
                         modifier = Modifier
-                            .size(34.dp)
+                            .size(width = 16.dp, height = 3.dp)
                             .clip(CircleShape)
                             .background(
-                                when {
-                                    concluido -> MaterialTheme.colorScheme.tertiary
-                                    ehHoje -> MaterialTheme.colorScheme.primaryContainer
-                                    else -> Color.Transparent
-                                },
-                            )
-                            .then(
-                                if (ehHoje && !concluido) {
-                                    Modifier.border(
-                                        width = 1.5.dp,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        shape = CircleShape,
-                                    )
-                                } else {
-                                    Modifier
-                                },
+                                if (ehHoje) MaterialTheme.colorScheme.primary else Color.Transparent,
                             ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (concluido) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Concluído",
-                                tint = MaterialTheme.colorScheme.onTertiary,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        } else {
-                            Text(
-                                text = dia.data.dayOfMonth.toString(),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = if (ehHoje) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                },
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(5.dp))
-                    if (agendado != null) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(corDoTreino(agendado.treinoId)),
-                        )
-                    } else {
-                        Spacer(Modifier.size(6.dp))
-                    }
+                    )
                 }
             }
         }
@@ -351,28 +406,16 @@ private fun CartaoDestaque(
     resumo: ResumoModelo?,
     ultimaVez: String?,
     acao: String,
-    destaqueAtivo: Boolean,
     aoClicar: () -> Unit,
 ) {
-    val corAcento = if (destaqueAtivo) {
-        MaterialTheme.colorScheme.secondary
-    } else {
-        corDoTreino(treinoId)
-    }
     val interacao = remember { MutableInteractionSource() }
 
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .escalaPressao(interacao),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
-        border = BorderStroke(
-            width = 1.5.dp,
-            color = corAcento.copy(alpha = if (destaqueAtivo) 0.85f else 0.45f),
-        ),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
         Column(
             modifier = Modifier
@@ -386,44 +429,32 @@ private fun CartaoDestaque(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(corAcento),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = etiqueta,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = corAcento,
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = titulo,
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
                 EmblemaTreino(
                     treinoId = treinoId,
                     nome = titulo,
-                    tamanho = 56.dp,
+                    tamanho = 64.dp,
                 )
+                Spacer(Modifier.width(16.dp))
+                Column(
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        text = etiqueta,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = titulo,
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
 
             if (resumo != null || ultimaVez != null) {
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(20.dp))
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
                     if (resumo != null) {
                         StatDestaque(
@@ -449,11 +480,11 @@ private fun CartaoDestaque(
                 onClick = aoClicar,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
-                shape = MaterialTheme.shapes.medium,
+                    .height(56.dp),
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = corAcento,
-                    contentColor = corSobre(corAcento),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
             ) {
                 Icon(
@@ -463,7 +494,7 @@ private fun CartaoDestaque(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = acao,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.labelLarge,
                 )
             }
         }
@@ -493,19 +524,17 @@ private fun StatDestaque(
 private fun CartaoDescanso(
     temTreinos: Boolean,
 ) {
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
         ) {
             Text(
-                text = if (temTreinos) "HOJE" else "BEM-VINDO",
-                style = MaterialTheme.typography.labelMedium,
+                text = if (temTreinos) "Hoje" else "Bem-vindo",
+                style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(6.dp))
@@ -539,8 +568,8 @@ private fun CartaoOutroTreino(
     Surface(
         onClick = aoIniciar,
         interactionSource = interacao,
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier
             .fillMaxWidth()
             .escalaPressao(interacao),
@@ -562,16 +591,16 @@ private fun CartaoOutroTreino(
             ) {
                 Text(
                     text = treino.nome,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                 )
                 val info = buildList {
                     if (resumo != null && resumo.exercicios > 0) {
-                        add("${resumo.exercicios} ex · ${resumo.series} séries")
+                        add("${resumo.exercicios} exercícios")
                     }
                     if (ultimaVez != null) {
-                        add("Último: $ultimaVez")
+                        add("feito $ultimaVez")
                     }
-                }.joinToString(" • ")
+                }.joinToString(", ")
 
                 if (info.isNotEmpty()) {
                     Text(
@@ -582,11 +611,20 @@ private fun CartaoOutroTreino(
                     )
                 }
             }
-            Icon(
-                imageVector = Icons.Default.PlayArrow,
-                contentDescription = "Iniciar",
-                tint = corDoTreino(treino.id),
-            )
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Iniciar",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
     }
 }
@@ -599,11 +637,12 @@ private fun formatarUltimaVez(epochMillis: Long, hoje: LocalDate): String {
     return when {
         dias <= 0L -> "hoje"
         dias == 1L -> "ontem"
-        dias < 7L -> {
+        dias < 7L -> "há $dias dias"
+        else -> {
             val dia = Formatadores.nomeDiaSemana(data.dayOfWeek.value, TextStyle.SHORT)
                 .lowercase(Formatadores.ptBr)
-            "$dia (${dias}d)"
+                .trimEnd('.')
+            "$dia ${data.format(formatoDiaMes)}"
         }
-        else -> "há ${dias}d"
     }
 }

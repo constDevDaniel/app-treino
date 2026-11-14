@@ -20,8 +20,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +29,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,18 +50,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.OutlinedCard
 import com.daniel.treino.R
 import com.daniel.treino.ui.theme.CorAmbar
 import com.daniel.treino.ui.theme.CorAzul
-import com.daniel.treino.ui.theme.CorRosa
+import com.daniel.treino.ui.theme.CorPrata
 import com.daniel.treino.ui.theme.CorTerracota
 import com.daniel.treino.ui.theme.CorVerde
 import java.text.Normalizer
 import java.util.Locale
 
-// Reconstructed from S1/x.java, S1/w.java, S1/r.java, S1/l.java, S1/o.java, S1/p.java, S1/q.java, s0/c.java (method g), X1/s.java (case 1), K2/m.java (case 29)
+// Reconstructed from S1/x.java, S1/w.java, S1/r.java, S1/o.java, S1/q.java
 
 enum class IconeTreino(
     val chave: String,
@@ -83,34 +81,19 @@ enum class IconeTreino(
             val n = Normalizer.normalize(nome.lowercase(Locale.ROOT), Normalizer.Form.NFD)
                 .replace(Regex("\\p{M}+"), "")
             return when {
-                contemAlgum(n, "posterior", "flexora", "femoral", "isquio", "stiff") -> MESA_FLEXORA
+                contemAlgum(n, "superior", "braco", "biceps", "triceps", "ombro") -> SUPERIORES
                 contemAlgum(
                     n,
-                    "perna",
                     "inferior",
-                    "agach",
-                    "leg",
-                    "quadr",
+                    "perna",
                     "gluteo",
-                    "panturr",
-                    "avanco",
-                    "afundo",
-                    "lower",
+                    "leg",
+                    "quadriceps",
+                    "posterior",
+                    "panturrilha",
                 ) -> INFERIOR
-                contemAlgum(n, "costa", "puxad", "remad", "barra", "pull", "dorsal", "trapez") -> PUXAR
-                contemAlgum(
-                    n,
-                    "peito",
-                    "supino",
-                    "empurr",
-                    "push",
-                    "ombro",
-                    "ilitar",
-                    "desenvolv",
-                    "triceps",
-                    "crucif",
-                ) -> EMPURRAR
-                contemAlgum(n, "biceps", "rosca", "braco", "superior", "upper", "core", "abdom") -> SUPERIORES
+                contemAlgum(n, "empurr", "push", "peito", "supino") -> EMPURRAR
+                contemAlgum(n, "puxa", "pull", "costas", "dorsal", "remada") -> PUXAR
                 else -> PADRAO
             }
         }
@@ -124,10 +107,10 @@ typealias IconesTreino = IconeTreino
 
 val CoresTreino: List<Color> = listOf(
     CorTerracota,
-    CorVerde,
-    CorAmbar,
     CorAzul,
-    CorRosa,
+    CorAmbar,
+    CorVerde,
+    CorPrata,
 )
 
 val LocalOrdemTreinos = compositionLocalOf<Map<Long, Int>> { emptyMap() }
@@ -135,13 +118,13 @@ val LocalIconesTreinos = compositionLocalOf<Map<Long, String?>> { emptyMap() }
 
 @Composable
 fun corDoTreino(treinoId: Long?): Color {
-    if (treinoId == null) return CorRosa
-    val ordem = LocalOrdemTreinos.current[treinoId] ?: (treinoId.hashCode() and Int.MAX_VALUE)
+    val ordem = if (treinoId != null) LocalOrdemTreinos.current[treinoId] else null
+    if (ordem == null) return CorPrata
     return CoresTreino[ordem % CoresTreino.size]
 }
 
 fun corSobre(cor: Color): Color =
-    if (cor.luminance() > 0.45f) Color(0xFF12161A) else Color.White
+    if (cor.luminance() > 0.45f) Color(0xFF17181A) else Color.White
 
 @Composable
 fun EmblemaTreino(
@@ -149,19 +132,23 @@ fun EmblemaTreino(
     nome: String,
     modifier: Modifier = Modifier,
     tamanho: Dp = 44.dp,
-    preenchido: Boolean = true,
+    preenchido: Boolean = false,
     esmaecido: Boolean = false,
     id: Long? = treinoId,
     icone: String? = null,
 ) {
     val idEfetivo = id
     val corBase = corDoTreino(idEfetivo)
-    val cor = if (esmaecido) corBase.copy(alpha = 0.45f) else corBase
-    val fundo = if (preenchido) cor else cor.copy(alpha = 0.16f)
-    val conteudo = if (preenchido) corSobre(cor) else cor
+    val alfa = if (esmaecido) 0.45f else 1.0f
+    val fundo = if (preenchido) {
+        corBase.copy(alpha = alfa)
+    } else {
+        corBase.copy(alpha = 0.16f * alfa)
+    }
+    val conteudo = (if (preenchido) corSobre(corBase) else corBase).copy(alpha = alfa)
     val chaveSalva = icone ?: if (idEfetivo != null) LocalIconesTreinos.current[idEfetivo] else null
     val iconeResolvido = IconeTreino.porChave(chaveSalva) ?: IconeTreino.sugerir(nome)
-    val raio = (tamanho.value * 0.28f).coerceIn(6f, 16f).dp
+    val raio = (tamanho.value * 0.3f).dp
 
     Box(
         modifier = modifier
@@ -188,16 +175,17 @@ fun SeletorIconeTreino(
     Column {
         Text(
             text = "Ícone",
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp),
         )
-        Spacer(Modifier.height(8.dp))
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items(IconeTreino.entries) { icone ->
+            items(IconeTreino.entries, key = { it.chave }) { icone ->
                 val ativo = icone == selecionado
                 val fundo by animateColorAsState(
-                    targetValue = if (ativo) cor else MaterialTheme.colorScheme.surfaceContainerHigh,
+                    targetValue = if (ativo) cor else MaterialTheme.colorScheme.surfaceContainerHighest,
                     label = "fundoIcone",
                 )
                 Column(
@@ -246,8 +234,8 @@ fun Modifier.escalaPressao(interacao: MutableInteractionSource): Modifier {
     val escala by animateFloatAsState(
         targetValue = if (pressionado.value) 0.97f else 1f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium,
+            dampingRatio = 0.5f,
+            stiffness = 1500f,
         ),
         label = "pressao",
     )
@@ -264,7 +252,10 @@ fun NumeroAnimado(
     modifier: Modifier = Modifier,
     cor: Color = Color.Unspecified,
 ) {
-    Row(modifier = modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         texto.forEachIndexed { indice, caractere ->
             AnimatedContent(
                 targetState = caractere,

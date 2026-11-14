@@ -7,8 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,12 +15,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -38,17 +36,14 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.daniel.treino.ui.components.NumeroAnimado
 import com.daniel.treino.ui.components.PtBr
-import com.daniel.treino.ui.components.TextoRolante
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
 private val TemposPadrao = listOf(
-    60 to "1:00",
-    90 to "1:30",
     120 to "2:00",
     180 to "3:00"
 )
@@ -104,9 +99,8 @@ fun BarraDescanso(
         color = if (ativo) {
             MaterialTheme.colorScheme.primaryContainer
         } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh
-        },
-        tonalElevation = 2.dp
+            MaterialTheme.colorScheme.surfaceContainer
+        }
     ) {
         AnimatedContent(targetState = ativo, label = "descanso") { emContagem ->
             if (emContagem && fim != null) {
@@ -134,51 +128,46 @@ private fun SeletorDescanso(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Icon(
-            Icons.Outlined.Timer,
-            contentDescription = null,
-            tint = if (realcar) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
-            modifier = Modifier.size(20.dp)
-        )
-        Column(Modifier.weight(1f)) {
-            Text(
-                "Descanso",
-                style = MaterialTheme.typography.labelLarge
-            )
-            Text(
-                if (realcar) "Toque para iniciar" else "Entre séries",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (realcar) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
-            )
-        }
         TemposPadrao.forEach { (segundos, rotulo) ->
-            if (realcar && segundos == 90) {
-                Button(
-                    onClick = { aoIniciar(segundos) },
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                    modifier = Modifier.height(36.dp)
+            Surface(
+                onClick = { aoIniciar(segundos) },
+                shape = CircleShape,
+                color = if (realcar) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Text(rotulo)
-                }
-            } else {
-                FilledTonalButton(
-                    onClick = { aoIniciar(segundos) },
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                    modifier = Modifier.height(36.dp)
-                ) {
-                    Text(rotulo)
+                    Icon(
+                        imageVector = Icons.Outlined.Timer,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = if (realcar) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = rotulo,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (realcar) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
                 }
             }
         }
@@ -214,41 +203,46 @@ private fun ContagemDescanso(
     val segundos = segundosRestantes % 60
     val textoTempo = String.format(PtBr, "%d:%02d", minutos, segundos)
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        LinearProgressIndicator(
-            progress = { progresso },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier.size(56.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "Descansando",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                TextoRolante(
-                    texto = textoTempo,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            OutlinedButton(onClick = { aoAdicionar(30) }) {
-                Text("+30s")
-            }
-            Spacer(Modifier.width(8.dp))
-            TextButton(onClick = aoPular) {
-                Text("Pular")
-            }
+            CircularProgressIndicator(
+                progress = { progresso },
+                modifier = Modifier.size(56.dp),
+                strokeWidth = 5.dp,
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            )
+            Icon(
+                imageVector = Icons.Outlined.Timer,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+        Spacer(Modifier.width(16.dp))
+        NumeroAnimado(
+            texto = textoTempo,
+            estilo = MaterialTheme.typography.headlineLarge,
+            modifier = Modifier.weight(1f),
+            cor = MaterialTheme.colorScheme.onSurface
+        )
+        OutlinedButton(
+            onClick = { aoAdicionar(30) },
+            shape = CircleShape
+        ) {
+            Text("+30s")
+        }
+        Spacer(Modifier.width(8.dp))
+        TextButton(onClick = aoPular) {
+            Text("Pular")
         }
     }
 }

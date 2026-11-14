@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.CloudDone
@@ -31,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -215,13 +217,14 @@ fun BackupScreen(
                         }
                     },
                     enabled = !ocupadoOuSalvando,
+                    shape = CircleShape,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .height(56.dp),
                 ) {
                     if (ocupadoOuSalvando) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(22.dp),
                             strokeWidth = 2.dp,
                             color = MaterialTheme.colorScheme.onPrimary,
                         )
@@ -235,12 +238,12 @@ fun BackupScreen(
                             imageVector = Icons.Outlined.CloudUpload,
                             contentDescription = null,
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(10.dp))
                         Text(
                             text = if (temDestinoPermanente) {
                                 "Fazer backup agora"
                             } else {
-                                "Escolher local do backup"
+                                "Fazer backup no Google Drive"
                             },
                             style = MaterialTheme.typography.titleMedium,
                         )
@@ -260,11 +263,10 @@ fun BackupScreen(
 
             if (estado.destino != null && estado.destinoPermanente) {
                 item {
-                    Card(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        ),
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                     ) {
                         Row(
                             modifier = Modifier
@@ -280,7 +282,7 @@ fun BackupScreen(
                                     style = MaterialTheme.typography.titleMedium,
                                 )
                                 Text(
-                                    text = "Atualiza o arquivo sempre que você conclui um treino ou importa uma planilha.",
+                                    text = "Salva no mesmo arquivo sempre que você concluir um treino.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(top = 2.dp),
@@ -300,7 +302,7 @@ fun BackupScreen(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = "Restaurar",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
                     text = "Traz de volta os treinos de um arquivo de backup, por exemplo num celular novo. Os dados atuais deste celular são substituídos.",
@@ -316,9 +318,10 @@ fun BackupScreen(
                         abrirDocumento.launch(arrayOf("application/json", "text/*", "*/*"))
                     },
                     enabled = !vm.ocupado,
+                    shape = CircleShape,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .height(52.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Restore,
@@ -340,11 +343,10 @@ private fun CartaoStatusBackup(
     estado: EstadoBackup,
 ) {
     val configurado = estado.destino != null
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -358,38 +360,44 @@ private fun CartaoStatusBackup(
                 },
                 contentDescription = null,
                 tint = if (configurado) {
-                    MaterialTheme.colorScheme.tertiary
+                    MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(24.dp),
             )
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
             Column(
                 modifier = Modifier.weight(1f),
             ) {
-                Text(
-                    text = if (configurado) {
-                        estado.nomeArquivo ?: "treino-backup.json"
-                    } else {
-                        "Nenhum arquivo escolhido"
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                val subtitulo = when {
-                    !configurado -> "Toque em \"Escolher local do backup\" abaixo."
-                    estado.ultimoBackup != null -> {
-                        val prefixo = estado.local?.let { "$it • " } ?: ""
-                        "${prefixo}Último backup: ${formatarDataHora(estado.ultimoBackup)}"
-                    }
-                    else -> estado.local ?: "Arquivo pronto para receber o backup"
+                if (estado.ultimoBackup == null) {
+                    Text(
+                        text = "Nenhum backup feito ainda.",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                } else {
+                    Text(
+                        text = "Último backup",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = formatarDataHora(estado.ultimoBackup),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                 }
-                Text(
-                    text = subtitulo,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+                if (configurado) {
+                    val detalhes = listOfNotNull(estado.nomeArquivo, estado.local)
+                        .joinToString(", ")
+                    if (detalhes.isNotEmpty()) {
+                        Text(
+                            text = detalhes,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                }
             }
         }
     }
@@ -399,7 +407,6 @@ private fun formatarDataHora(epochMillis: Long): String {
     val texto = Instant.ofEpochMilli(epochMillis)
         .atZone(ZoneId.systemDefault())
         .format(formatoDataHora)
-        .replace(".", "")
     return texto.replaceFirstChar {
         if (it.isLowerCase()) it.titlecase(Formatadores.ptBr) else it.toString()
     }

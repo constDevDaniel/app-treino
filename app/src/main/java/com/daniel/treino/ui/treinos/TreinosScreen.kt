@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -24,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -101,6 +101,8 @@ fun TreinosScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = aoCriar,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text("Novo treino") }
             )
@@ -110,15 +112,19 @@ fun TreinosScreen(
         LazyColumn(
             modifier = Modifier.padding(padding),
             contentPadding = PaddingValues(
-                start = 16.dp,
-                top = 16.dp,
-                end = 16.dp,
+                start = 20.dp,
+                top = 20.dp,
+                end = 20.dp,
                 bottom = 96.dp
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Text("Treinos", style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    "Treinos",
+                    style = MaterialTheme.typography.displayMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
             }
 
             if (lista.isEmpty()) {
@@ -142,7 +148,7 @@ fun TreinosScreen(
                         .fillMaxWidth()
                         .animateItem(),
                     shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                    color = MaterialTheme.colorScheme.surfaceContainer
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -152,13 +158,13 @@ fun TreinosScreen(
                             id = treino.id,
                             nome = treino.nome,
                             icone = treino.icone,
-                            tamanho = 44.dp
+                            tamanho = 48.dp
                         )
-                        Spacer(Modifier.width(14.dp))
+                        Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(treino.nome, style = MaterialTheme.typography.titleMedium)
+                            Text(treino.nome, style = MaterialTheme.typography.titleLarge)
                             val legenda = if (qtdExercicios > 0) {
-                                "$qtdExercicios exercícios · $qtdSeries séries · Toque para editar"
+                                "$qtdExercicios exercícios, $qtdSeries séries"
                             } else {
                                 "Toque para adicionar exercícios"
                             }
@@ -180,14 +186,17 @@ fun TreinosScreen(
             item {
                 OutlinedButton(
                     onClick = aoImportar,
-                    modifier = Modifier.fillMaxWidth()
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
                 ) {
                     Icon(
                         Icons.Outlined.UploadFile,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(10.dp))
                     Text("Importar treinos do Excel")
                 }
             }
@@ -195,28 +204,34 @@ fun TreinosScreen(
             if (exercicios.isNotEmpty()) {
                 item {
                     Spacer(Modifier.height(8.dp))
-                    Text("Exercícios", style = MaterialTheme.typography.titleMedium)
+                    Text("Exercícios", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "Renomear atualiza todas as fichas e o histórico.",
+                        "Renomear aqui vale para todos os treinos e para o histórico.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 items(exercicios, key = { "e-${it.id}" }) { ex ->
-                    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier.padding(start = 16.dp, top = 4.dp, end = 4.dp, bottom = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                ex.nome,
-                                modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.bodyLarge
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            ex.nome,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 4.dp),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        IconButton(onClick = { editandoExercicio = ex }) {
+                            Icon(
+                                Icons.Outlined.Edit,
+                                contentDescription = "Renomear",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            IconButton(onClick = { editandoExercicio = ex }) {
-                                Icon(Icons.Outlined.Edit, contentDescription = "Renomear")
-                            }
                         }
                     }
                 }
@@ -261,7 +276,6 @@ private fun DialogoRenomearExercicio(
                     nome = it
                     erro = false
                 },
-                label = { Text("Nome") },
                 singleLine = true,
                 isError = erro,
                 supportingText = if (erro) {

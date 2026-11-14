@@ -14,8 +14,8 @@ import java.util.Locale
 object Formatadores {
     val ptBr: Locale = Locale.forLanguageTag("pt-BR")
 
-    private val numero: DecimalFormat = DecimalFormat("0.##", DecimalFormatSymbols(ptBr))
-    private val inteiro: DecimalFormat = DecimalFormat("#,##0.#", DecimalFormatSymbols(ptBr))
+    val numero: DecimalFormat = DecimalFormat("0.##", DecimalFormatSymbols(ptBr))
+    val inteiro: DecimalFormat = DecimalFormat("#,##0.#", DecimalFormatSymbols(ptBr))
     private val dataCurta: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy", ptBr)
     private val diaMes: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM", ptBr)
 
@@ -24,7 +24,7 @@ object Formatadores {
 
     fun formatarVolume(kg: Double): String =
         if (kg >= 1000.0) {
-            "${numero.format(kg / 1000.0)} t"
+            "${inteiro.format(kg / 1000.0)} t"
         } else {
             "${inteiro.format(kg)} kg"
         }
@@ -37,9 +37,7 @@ object Formatadores {
     }
 
     fun nomeDiaSemana(diaSemana: Int, estilo: TextStyle = TextStyle.SHORT): String {
-        val bruto = DayOfWeek.of(diaSemana)
-            .getDisplayName(estilo, ptBr)
-            .trimEnd('.')
+        val bruto = DayOfWeek.of(diaSemana).getDisplayName(estilo, ptBr)
         return bruto.replaceFirstChar {
             if (it.isLowerCase()) it.titlecase(ptBr) else it.toString()
         }

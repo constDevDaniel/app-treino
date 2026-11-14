@@ -1,5 +1,6 @@
 package com.daniel.treino.ui.progresso
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,22 +15,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -58,10 +55,13 @@ import com.daniel.treino.data.db.RecordePessoal
 import com.daniel.treino.data.db.RelatoriosDao
 import com.daniel.treino.data.db.ResumoPeriodo
 import com.daniel.treino.data.db.VolumeSemanal
+import com.daniel.treino.ui.components.PtBr
 import com.daniel.treino.ui.components.TextoRolante
 import com.daniel.treino.ui.components.formatarCarga
 import com.daniel.treino.ui.components.formatarDataCurta
 import com.daniel.treino.ui.components.formatarVolume
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
@@ -200,6 +200,9 @@ class ProgressoViewModel(
 
 private val ChaveRotulos = ExtraStore.Key<List<String>>()
 
+private val FormatoDataRecorde: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("dd/MM/yy", PtBr)
+
 private val FormatadorRotulos = CartesianValueFormatter { contexto, x, _ ->
     contexto.model.extraStore[ChaveRotulos].getOrNull(x.toInt())?.takeIf { it.isNotEmpty() } ?: " "
 }
@@ -210,7 +213,7 @@ fun ProgressoScreen(abrirHistorico: () -> Unit) {
     val ui by vm.ui.collectAsStateWithLifecycle()
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -218,7 +221,7 @@ fun ProgressoScreen(abrirHistorico: () -> Unit) {
                 Text(
                     "Relatórios",
                     modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.headlineMedium
+                    style = MaterialTheme.typography.displayMedium
                 )
                 TextButton(onClick = abrirHistorico) {
                     Icon(Icons.Outlined.History, contentDescription = null)
@@ -234,8 +237,7 @@ fun ProgressoScreen(abrirHistorico: () -> Unit) {
                     SegmentedButton(
                         selected = ui.periodo == p,
                         onClick = { vm.selecionarPeriodo(p) },
-                        shape = SegmentedButtonDefaults.itemShape(index, Periodo.entries.size),
-                        icon = {}
+                        shape = SegmentedButtonDefaults.itemShape(index, Periodo.entries.size)
                     ) {
                         Text(p.rotulo)
                     }
@@ -253,7 +255,20 @@ fun ProgressoScreen(abrirHistorico: () -> Unit) {
                 ) {
                     CartaoNumero("Treinos", ui.resumo.treinos.toString(), Modifier.weight(1f))
                     CartaoNumero("Séries", ui.resumo.series.toString(), Modifier.weight(1f))
-                    CartaoNumero("Volume (kg)", formatarVolume(ui.resumo.volume), Modifier.weight(1f))
+                    CartaoNumero("Volume", formatarVolume(ui.resumo.volume), Modifier.weight(1f))
+                }
+            }
+
+            item {
+                CartaoSecao(
+                    titulo = "Volume por semana",
+                    subtitulo = "Soma de repetições × carga das séries feitas."
+                ) {
+                    if (ui.volumeSemanal.isEmpty()) {
+                        GraficoVazio()
+                    } else {
+                        GraficoVolume(ui.volumeSemanal)
+                    }
                 }
             }
 
@@ -277,21 +292,8 @@ fun ProgressoScreen(abrirHistorico: () -> Unit) {
             }
 
             item {
-                CartaoSecao(
-                    titulo = "Volume semanal (kg)",
-                    subtitulo = "Soma de repetições × carga por semana."
-                ) {
-                    if (ui.volumeSemanal.isEmpty()) {
-                        GraficoVazio()
-                    } else {
-                        GraficoVolume(ui.volumeSemanal)
-                    }
-                }
-            }
-
-            item {
-                Column {
-                    Text("Recordes pessoais", style = MaterialTheme.typography.titleMedium)
+                Column(modifier = Modifier.padding(top = 4.dp)) {
+                    Text("Recordes pessoais", style = MaterialTheme.typography.titleLarge)
                     Text(
                         "Maior carga de todos os tempos em cada exercício.",
                         style = MaterialTheme.typography.bodySmall,
@@ -304,25 +306,44 @@ fun ProgressoScreen(abrirHistorico: () -> Unit) {
                 item { GraficoVazio() }
             } else {
                 items(ui.recordes, key = { it.exercicioId }) { rec ->
-                    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                        ListItem(
-                            leadingContent = {
-                                Icon(
-                                    Icons.Outlined.EmojiEvents,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.tertiary
-                                )
-                            },
-                            headlineContent = { Text(rec.nome) },
-                            supportingContent = { Text("Em ${formatarDataCurta(rec.inicio)}") },
-                            trailingContent = {
+                    val dataTexto = remember(rec.inicio) {
+                        Instant.ofEpochMilli(rec.inicio)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                            .format(FormatoDataRecorde)
+                    }
+                    val repsTexto = rec.repeticoes?.let { " × $it" } ?: ""
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Outlined.EmojiEvents,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary
+                            )
+                            Spacer(Modifier.width(14.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(rec.nome, style = MaterialTheme.typography.bodyLarge)
                                 Text(
-                                    "${formatarCarga(rec.cargaMaxima)} kg",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.primary
+                                    dataTexto,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                        )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                "${formatarCarga(rec.cargaMaxima)} kg$repsTexto",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -336,15 +357,19 @@ private fun CartaoSecao(
     subtitulo: String,
     conteudo: @Composable ColumnScope.() -> Unit
 ) {
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
             Text(titulo, style = MaterialTheme.typography.titleMedium)
             Text(
                 subtitulo,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(14.dp))
             conteudo()
         }
     }
@@ -352,23 +377,27 @@ private fun CartaoSecao(
 
 @Composable
 private fun CartaoNumero(rotulo: String, valor: String, modifier: Modifier = Modifier) {
-    OutlinedCard(modifier = modifier) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            TextoRolante(
-                texto = valor,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Text(
                 rotulo,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(4.dp))
+            TextoRolante(
+                texto = valor,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SeletorExercicio(
     exercicios: List<Exercicio>,
@@ -377,22 +406,19 @@ private fun SeletorExercicio(
 ) {
     var expandido by remember { mutableStateOf(false) }
 
-    ExposedDropdownMenuBox(
-        expanded = expandido,
-        onExpandedChange = { expandido = it }
-    ) {
-        OutlinedTextField(
-            value = selecionado?.nome ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Exercício") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandido) },
-            modifier = Modifier
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                .fillMaxWidth(),
-            singleLine = true
-        )
-        ExposedDropdownMenu(
+    Box {
+        TextButton(onClick = { expandido = true }) {
+            Text(
+                text = selecionado?.nome ?: "",
+                style = MaterialTheme.typography.titleSmall
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                imageVector = Icons.Filled.ArrowDropDown,
+                contentDescription = "Selecionar exercício"
+            )
+        }
+        DropdownMenu(
             expanded = expandido,
             onDismissRequest = { expandido = false }
         ) {
