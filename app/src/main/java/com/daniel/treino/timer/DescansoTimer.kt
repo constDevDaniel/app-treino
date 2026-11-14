@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
+import androidx.core.content.edit
 import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -65,10 +66,10 @@ class DescansoTimer(
     fun iniciar(segundos: Int, proximaSerie: String? = null) {
         val agora = System.currentTimeMillis()
         _inicio.value = agora
-        prefs.edit()
-            .putString("proxima", proximaSerie)
-            .putLong("inicio", agora)
-            .apply()
+        prefs.edit {
+            putString("proxima", proximaSerie)
+            putLong("inicio", agora)
+        }
         atualizarFim(agora + segundos * 1000L)
     }
 
@@ -85,11 +86,11 @@ class DescansoTimer(
         jobContagem?.cancel()
         _fim.value = null
         _inicio.value = null
-        prefs.edit()
-            .remove("fim")
-            .remove("inicio")
-            .remove("proxima")
-            .apply()
+        prefs.edit {
+            remove("fim")
+            remove("inicio")
+            remove("proxima")
+        }
         alarmManager?.cancel(pendingIntentAlarme())
         notificationManager?.cancel(NOTIFICATION_ID)
     }
@@ -117,7 +118,7 @@ class DescansoTimer(
 
     fun atualizarFim(novoFim: Long) {
         _fim.value = novoFim
-        prefs.edit().putLong("fim", novoFim).apply()
+        prefs.edit { putLong("fim", novoFim) }
         agendarAlarme(novoFim)
         mostrarNotificacao(novoFim)
         iniciarMonitoramento(novoFim)
