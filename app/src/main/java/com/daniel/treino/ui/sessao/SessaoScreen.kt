@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,15 +29,18 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,6 +59,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -209,9 +215,14 @@ fun SessaoScreen(voltar: () -> Unit) {
                             )
                             Spacer(Modifier.width(12.dp))
                             Column {
-                                Text(ui.nome, style = MaterialTheme.typography.titleMedium)
                                 Text(
-                                    "${ui.feitas} de ${ui.total} séries feitas",
+                                    text = ui.nome,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = "${ui.feitas} de ${ui.total} séries feitas",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -246,7 +257,7 @@ fun SessaoScreen(voltar: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(3.dp),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
                 )
             }
@@ -265,19 +276,40 @@ fun SessaoScreen(voltar: () -> Unit) {
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     )
-                    TextButton(
-                        onClick = {
-                            if (ui.feitas < ui.total) {
-                                confirmar = "concluir"
-                            } else {
-                                vm.concluir()
-                            }
-                        },
+                    val todasConcluidas = ui.total > 0 && ui.feitas == ui.total
+                    val aoConcluir: () -> Unit = {
+                        if (ui.feitas < ui.total) {
+                            confirmar = "concluir"
+                        } else {
+                            vm.concluir()
+                        }
+                    }
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp)
+                            .padding(horizontal = 20.dp, vertical = 10.dp)
                     ) {
-                        Text("Concluir treino", style = MaterialTheme.typography.labelLarge)
+                        if (todasConcluidas) {
+                            Button(
+                                onClick = aoConcluir,
+                                shape = CircleShape,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp)
+                            ) {
+                                Text("Concluir treino", style = MaterialTheme.typography.labelLarge)
+                            }
+                        } else {
+                            FilledTonalButton(
+                                onClick = aoConcluir,
+                                shape = CircleShape,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp)
+                            ) {
+                                Text("Concluir treino", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
                     }
                 }
             }
@@ -287,7 +319,7 @@ fun SessaoScreen(voltar: () -> Unit) {
             modifier = Modifier
                 .padding(padding)
                 .imePadding(),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(ui.grupos, key = { it.series.first().exercicioId }) { grupo ->
@@ -354,57 +386,88 @@ private fun GrupoExercicioCard(
     grupo: GrupoExercicio,
     aoSalvar: (Long, String, String, Boolean) -> Unit
 ) {
-    val todasFeitas = grupo.series.isNotEmpty() && grupo.series.all { it.concluida }
+    val feitas = grupo.series.count { it.concluida }
+    val total = grupo.series.size
+    val todasFeitas = total > 0 && feitas == total
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainer
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (todasFeitas) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant
+            }
+        )
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    grupo.nome,
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    "${grupo.series.count { it.concluida }}/${grupo.series.size}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (todasFeitas) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = grupo.nome,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Surface(
+                    shape = CircleShape,
+                    color = if (todasFeitas) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHigh
+                    }
+                ) {
+                    Text(
+                        text = "$feitas/$total",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (todasFeitas) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Série",
+                    text = "Série",
                     modifier = Modifier.width(36.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
                 Text(
-                    "Reps",
-                    modifier = Modifier.weight(0.7f),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Reps",
+                    modifier = Modifier.weight(0.75f),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
                 Text(
-                    "Carga (kg)",
+                    text = "Carga (kg)",
                     modifier = Modifier.weight(1.1f),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
-                Spacer(Modifier.width(44.dp))
+                Spacer(Modifier.width(48.dp))
             }
             grupo.series.forEach { serie ->
                 LinhaSerie(serie = serie, aoSalvar = aoSalvar)
@@ -427,7 +490,7 @@ private fun LinhaSerie(
 
     val corFundoLinha by animateColorAsState(
         targetValue = if (serie.concluida) {
-            MaterialTheme.colorScheme.surfaceContainerHigh
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
         } else {
             Color.Transparent
         },
@@ -435,7 +498,7 @@ private fun LinhaSerie(
     )
     val corBadge by animateColorAsState(
         targetValue = if (serie.concluida) {
-            MaterialTheme.colorScheme.onSurface
+            MaterialTheme.colorScheme.primary
         } else {
             MaterialTheme.colorScheme.surfaceContainerHigh
         },
@@ -443,20 +506,30 @@ private fun LinhaSerie(
     )
     val corTextoBadge by animateColorAsState(
         targetValue = if (serie.concluida) {
-            MaterialTheme.colorScheme.surface
+            MaterialTheme.colorScheme.onPrimary
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         },
         label = "corTextoBadgeSerie"
     )
+    val coresCampo = OutlinedTextFieldDefaults.colors(
+        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.5f),
+        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+        focusedBorderColor = MaterialTheme.colorScheme.primary
+    )
+    val estiloNumero = MaterialTheme.typography.titleMedium.copy(
+        textAlign = TextAlign.Center,
+        color = MaterialTheme.colorScheme.onSurface
+    )
 
     Surface(
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.medium,
         color = corFundoLinha,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(vertical = 4.dp, horizontal = 2.dp),
+            modifier = Modifier.padding(vertical = 6.dp, horizontal = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -472,7 +545,7 @@ private fun LinhaSerie(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "${serie.ordem}",
+                        text = "${serie.ordem}",
                         style = MaterialTheme.typography.labelMedium,
                         color = corTextoBadge
                     )
@@ -484,8 +557,19 @@ private fun LinhaSerie(
                     reps = it
                     aoSalvar(serie.id, it, carga, serie.concluida)
                 },
-                modifier = Modifier.weight(0.7f),
+                modifier = Modifier.weight(0.75f),
                 singleLine = true,
+                textStyle = estiloNumero,
+                placeholder = {
+                    Text(
+                        "—",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                shape = MaterialTheme.shapes.medium,
+                colors = coresCampo,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             OutlinedTextField(
@@ -496,24 +580,40 @@ private fun LinhaSerie(
                 },
                 modifier = Modifier.weight(1.1f),
                 singleLine = true,
+                textStyle = estiloNumero,
+                placeholder = {
+                    Text(
+                        "—",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                shape = MaterialTheme.shapes.medium,
+                colors = coresCampo,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
             Surface(
                 onClick = { aoSalvar(serie.id, reps, carga, !serie.concluida) },
                 shape = CircleShape,
                 color = if (serie.concluida) {
-                    MaterialTheme.colorScheme.onSurface
+                    MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.surfaceContainerHigh
                 },
-                modifier = Modifier.size(44.dp)
+                border = if (serie.concluida) {
+                    null
+                } else {
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                },
+                modifier = Modifier.size(48.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Filled.Check,
                         contentDescription = if (serie.concluida) "Desmarcar série" else "Concluir série",
                         tint = if (serie.concluida) {
-                            MaterialTheme.colorScheme.surface
+                            MaterialTheme.colorScheme.onPrimary
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
