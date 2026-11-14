@@ -76,9 +76,7 @@ class HojeViewModel(
         sessaoRepo.ultimasSessoesPorTreino,
     ) { resumos, ultimas ->
         val rMap = resumos.associateBy { it.treinoId }
-        val uMap = ultimas.mapNotNull { u ->
-            u.treinoId?.let { id -> id to u.inicio }
-        }.toMap()
+        val uMap = ultimas.associate { it.treinoId to it.inicio }
         rMap to uMap
     }
 

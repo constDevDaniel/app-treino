@@ -128,9 +128,9 @@ fun corSobre(cor: Color): Color =
 
 @Composable
 fun EmblemaTreino(
-    treinoId: Long? = null,
     nome: String,
     modifier: Modifier = Modifier,
+    treinoId: Long? = null,
     tamanho: Dp = 44.dp,
     preenchido: Boolean = false,
     esmaecido: Boolean = false,
