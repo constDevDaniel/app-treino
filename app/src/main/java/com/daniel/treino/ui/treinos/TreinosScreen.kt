@@ -1,6 +1,7 @@
 package com.daniel.treino.ui.treinos
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -57,6 +58,7 @@ import com.daniel.treino.data.db.Treino
 import com.daniel.treino.data.repository.TreinoRepository
 import com.daniel.treino.ui.components.EmblemaTreino
 import com.daniel.treino.ui.components.EstadoVazio
+import com.daniel.treino.ui.components.escalaPressao
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -147,29 +149,34 @@ fun TreinosScreen(
                 val resumo = resumos[treino.id]
                 val qtdExercicios = resumo?.exercicios ?: 0
                 val qtdSeries = resumo?.series ?: 0
+                val interacao = remember { MutableInteractionSource() }
 
                 Surface(
                     onClick = { aoEditar(treino.id) },
+                    interactionSource = interacao,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .animateItem(),
+                        .animateItem()
+                        .escalaPressao(interacao),
                     shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surfaceContainer,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         EmblemaTreino(
                             id = treino.id,
                             nome = treino.nome,
                             icone = treino.icone,
-                            tamanho = 48.dp
+                            tamanho = 44.dp
                         )
-                        Spacer(Modifier.width(16.dp))
+                        Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(treino.nome, style = MaterialTheme.typography.titleLarge)
+                            Text(treino.nome, style = MaterialTheme.typography.titleMedium)
                             val legenda = if (qtdExercicios > 0) {
                                 "$qtdExercicios exercícios, $qtdSeries séries"
                             } else {
