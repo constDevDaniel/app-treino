@@ -61,8 +61,8 @@ fun AgendaScreen() {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
             item {
                 Column {
@@ -132,18 +132,18 @@ private fun LinhaDia(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (treinoAtual != null) {
                     EmblemaTreino(
                         treinoId = treinoAtual.id,
                         nome = treinoAtual.nome,
-                        tamanho = 44.dp,
+                        tamanho = 40.dp,
                     )
                 } else {
                     Box(
-                        modifier = Modifier.size(44.dp),
+                        modifier = Modifier.size(40.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(
@@ -154,18 +154,18 @@ private fun LinhaDia(
                         )
                     }
                 }
-                Spacer(Modifier.width(14.dp))
+                Spacer(Modifier.width(16.dp))
                 Column(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(
                         text = if (ehHoje) "$nomeDia · hoje" else nomeDia,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         text = treinoAtual?.nome ?: "Descanso",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         color = if (treinoAtual == null) {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else {

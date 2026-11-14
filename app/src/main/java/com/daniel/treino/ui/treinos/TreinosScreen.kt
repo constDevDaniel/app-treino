@@ -120,12 +120,12 @@ fun TreinosScreen(
                 .fillMaxSize()
                 .padding(padding),
             contentPadding = PaddingValues(
-                start = 20.dp,
-                top = 20.dp,
-                end = 20.dp,
+                start = 16.dp,
+                top = 16.dp,
+                end = 16.dp,
                 bottom = 96.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
                 Text(
@@ -165,18 +165,18 @@ fun TreinosScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         EmblemaTreino(
                             id = treino.id,
                             nome = treino.nome,
                             icone = treino.icone,
-                            tamanho = 44.dp
+                            tamanho = 48.dp
                         )
-                        Spacer(Modifier.width(14.dp))
+                        Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(treino.nome, style = MaterialTheme.typography.titleMedium)
+                            Text(treino.nome, style = MaterialTheme.typography.titleLarge)
                             val legenda = if (qtdExercicios > 0) {
                                 "$qtdExercicios exercícios, $qtdSeries séries"
                             } else {
@@ -184,7 +184,7 @@ fun TreinosScreen(
                             }
                             Text(
                                 legenda,
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
