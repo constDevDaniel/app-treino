@@ -25,7 +25,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,14 +57,11 @@ fun AgendaScreen() {
     val ui by vm.ui.collectAsState()
     val hoje = remember { LocalDate.now().dayOfWeek.value }
 
-    Scaffold { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
             item {
                 Column {
                     Text(
@@ -96,9 +92,8 @@ fun AgendaScreen() {
                 )
             }
 
-            item {
-                Spacer(Modifier.height(8.dp))
-            }
+        item {
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
