@@ -203,7 +203,7 @@ private val FormatoDataRecorde: DateTimeFormatter =
     DateTimeFormatter.ofPattern("dd/MM/yy", PtBr)
 
 private val FormatadorRotulos = CartesianValueFormatter { contexto, x, _ ->
-    contexto.model.extraStore[ChaveRotulos].getOrNull(x.toInt())?.takeIf { it.isNotEmpty() } ?: " "
+    contexto.model.extraStore.getOrNull(ChaveRotulos)?.getOrNull(x.toInt())?.takeIf { it.isNotEmpty() } ?: " "
 }
 
 @Composable
