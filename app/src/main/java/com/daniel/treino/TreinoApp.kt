@@ -58,7 +58,7 @@ class TreinoApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        escopo.launch {
+        escopo.launch(Dispatchers.IO) {
             catalogo.garantirCatalogo(getExternalFilesDir(null))
         }
     }

@@ -74,13 +74,13 @@ jobs:
           echo "version_code=$COMMIT_COUNT" >> "$GITHUB_OUTPUT"
           echo "Versão definida: v$VERSION (versionCode=$COMMIT_COUNT)"
 
-      - name: Compilar APK (assembleDebug)
+      - name: Compilar APK (assembleRelease)
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon \
+          ./gradlew assembleRelease --no-daemon \
             -PversionName="${{ steps.semver.outputs.version_name }}" \
             -PversionCode="${{ steps.semver.outputs.version_code }}"
-          cp app/build/outputs/apk/debug/app-debug.apk treino.apk
+          cp app/build/outputs/apk/release/app-release.apk treino.apk
 
       - name: Salvar APK nos Artifacts da Action
         uses: actions/upload-artifact@v7
