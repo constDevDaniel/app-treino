@@ -115,7 +115,7 @@ private fun ConteudoShell() {
                             icon = {
                                 Icon(
                                     imageVector = aba.icone,
-                                    contentDescription = aba.titulo,
+                                    contentDescription = null,
                                 )
                             },
                             label = {

@@ -1,5 +1,6 @@
 package com.daniel.treino.ui.components
 
+import android.provider.Settings
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -223,6 +225,16 @@ fun SeletorIconeTreino(
 
 @Composable
 fun Modifier.escalaPressao(interacao: MutableInteractionSource): Modifier {
+    val context = LocalContext.current
+    val movimentoReduzido = remember(context) {
+        Settings.Global.getFloat(
+            context.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f,
+        ) == 0f
+    }
+    if (movimentoReduzido) return this
+
     val pressionado = remember { mutableStateOf(false) }
     LaunchedEffect(interacao) {
         interacao.interactions.collect { i ->
