@@ -132,16 +132,16 @@ private fun ConteudoShell() {
             startDestination = Aba.Hoje.rota,
             modifier = Modifier.padding(padding),
             enterTransition = {
-                fadeIn(tween(180)) + slideInHorizontally(tween(220)) { it / 16 }
+                fadeIn(tween(100))
             },
             exitTransition = {
-                fadeOut(tween(140))
+                fadeOut(tween(80))
             },
             popEnterTransition = {
-                fadeIn(tween(180))
+                fadeIn(tween(100))
             },
             popExitTransition = {
-                fadeOut(tween(140)) + slideOutHorizontally(tween(200)) { it / 16 }
+                fadeOut(tween(80))
             },
         ) {
             composable(Aba.Hoje.rota) {

@@ -13,14 +13,15 @@ android {
         applicationId = "com.daniel.treino"
         minSdk = 26
         targetSdk = 35
-        versionCode = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 2
-        versionName = (project.findProperty("versionName") as String?) ?: "0.2.0"
+        versionCode = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 3
+        versionName = (project.findProperty("versionName") as String?) ?: "0.3.0"
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
