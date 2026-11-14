@@ -85,7 +85,7 @@ fun HistoricoScreen(voltar: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Histórico", style = MaterialTheme.typography.titleMedium) },
+                title = { Text("Histórico", style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = voltar) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -162,16 +162,16 @@ private fun CartaoSessaoHistorico(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Row(
             modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 6.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            EmblemaTreino(sessao.treinoId, sessao.nomeTreino, tamanho = 42.dp)
+            EmblemaTreino(sessao.treinoId, sessao.nomeTreino, tamanho = 44.dp)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(sessao.nomeTreino, style = MaterialTheme.typography.titleMedium)
+                Text(sessao.nomeTreino, style = MaterialTheme.typography.titleLarge)
                 Text(
                     formatarData(sessao.inicio),
                     style = MaterialTheme.typography.bodySmall,

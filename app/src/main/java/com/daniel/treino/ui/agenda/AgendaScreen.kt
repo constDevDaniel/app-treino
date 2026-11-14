@@ -1,6 +1,7 @@
 package com.daniel.treino.ui.agenda
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,24 +12,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -49,7 +49,6 @@ import java.time.format.TextStyle
 
 // Reconstructed from s0/c.java (methods a and e), T1/a..m.java, T1/r..t.java
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgendaScreen() {
     val app = LocalContext.current.applicationContext as TreinoApp
@@ -59,191 +58,168 @@ fun AgendaScreen() {
     val ui by vm.ui.collectAsState()
     val hoje = remember { LocalDate.now().dayOfWeek.value }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Agenda",
-                            style = MaterialTheme.typography.headlineMedium,
-                        )
-                        Text(
-                            text = "Treino fixo de cada dia da semana",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    Scaffold { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (ui.treinos.isEmpty()) {
-                item {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Text(
-                                text = "Crie seus treinos na aba Treinos primeiro, depois atribua cada um aos dias da semana.",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                    }
+            item {
+                Column {
+                    Text(
+                        text = "Agenda",
+                        style = MaterialTheme.typography.displayMedium,
+                    )
+                    Text(
+                        text = "Escolha o treino de cada dia. No dia, é só tocar em Iniciar na aba Hoje.",
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
-            items((1..7).toList()) { dia ->
-                val nomeDia = remember(dia) {
-                    Formatadores.nomeDiaSemana(dia, TextStyle.FULL)
-                }
-                LinhaDiaAgenda(
-                    diaNome = nomeDia,
-                    ehHoje = dia == hoje,
-                    treinoAtual = ui.semana[dia],
-                    treinos = ui.treinos,
-                    aoEscolher = { id -> vm.definirDia(dia, id) },
+            items(
+                items = (1..7).toList(),
+                key = { it },
+            ) { diaSemana ->
+                LinhaDia(
+                    diaSemana = diaSemana,
+                    ehHoje = diaSemana == hoje,
+                    treinoAtual = ui.semana[diaSemana],
+                    todosTreinos = ui.treinos,
+                    aoEscolher = { treino ->
+                        vm.definirDia(diaSemana, treino?.id)
+                    },
                 )
             }
 
             item {
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(8.dp))
             }
         }
     }
 }
 
 @Composable
-private fun LinhaDiaAgenda(
-    diaNome: String,
+private fun LinhaDia(
+    diaSemana: Int,
     ehHoje: Boolean,
     treinoAtual: Treino?,
-    treinos: List<Treino>,
-    aoEscolher: (Long?) -> Unit,
+    todosTreinos: List<Treino>,
+    aoEscolher: (Treino?) -> Unit,
 ) {
-    var aberto by remember { mutableStateOf(false) }
+    var menuAberto by remember { mutableStateOf(false) }
+    val nomeDia = remember(diaSemana) {
+        Formatadores.nomeDiaSemana(diaSemana, TextStyle.FULL)
+    }
 
-    Surface(
-        onClick = {
-            if (treinos.isNotEmpty()) {
-                aberto = true
-            }
-        },
-        shape = MaterialTheme.shapes.medium,
-        color = if (ehHoje) {
-            MaterialTheme.colorScheme.surfaceContainerHigh
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerLow
-        },
-        border = if (ehHoje) {
-            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
-        } else {
-            null
-        },
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            onClick = { menuAberto = true },
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            border = if (ehHoje) {
+                BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+            } else {
+                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            },
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (treinoAtual != null) {
                     EmblemaTreino(
                         treinoId = treinoAtual.id,
                         nome = treinoAtual.nome,
-                        modifier = Modifier.padding(end = 12.dp),
-                        tamanho = 36.dp,
+                        tamanho = 40.dp,
                     )
+                } else {
+                    Box(
+                        modifier = Modifier.size(40.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.outlineVariant),
+                        )
+                    }
                 }
+                Spacer(Modifier.width(14.dp))
                 Column(
                     modifier = Modifier.weight(1f),
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = diaNome,
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        if (ehHoje) {
-                            Text(
-                                text = "HOJE",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(start = 8.dp),
-                            )
-                        }
-                    }
+                    Text(
+                        text = if (ehHoje) "$nomeDia · hoje" else nomeDia,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     Text(
                         text = treinoAtual?.nome ?: "Descanso",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (treinoAtual != null) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
+                        style = MaterialTheme.typography.titleLarge,
+                        color = if (treinoAtual == null) {
                             MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
                         },
-                        modifier = Modifier.padding(top = 2.dp),
                     )
                 }
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Escolher treino",
+                    contentDescription = "Selecionar treino",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
 
-            DropdownMenu(
-                expanded = aberto,
-                onDismissRequest = { aberto = false },
-            ) {
+        DropdownMenu(
+            expanded = menuAberto,
+            onDismissRequest = { menuAberto = false },
+        ) {
+            todosTreinos.forEach { treino ->
                 DropdownMenuItem(
-                    text = { Text("Descanso") },
-                    onClick = {
-                        aoEscolher(null)
-                        aberto = false
+                    text = { Text(treino.nome) },
+                    leadingIcon = {
+                        EmblemaTreino(
+                            treinoId = treino.id,
+                            nome = treino.nome,
+                            tamanho = 28.dp,
+                        )
                     },
-                    trailingIcon = if (treinoAtual == null) {
-                        { Icon(Icons.Default.Check, contentDescription = null) }
-                    } else {
-                        null
+                    trailingIcon = {
+                        if (treinoAtual?.id == treino.id) {
+                            Icon(Icons.Default.Check, contentDescription = null)
+                        }
+                    },
+                    onClick = {
+                        menuAberto = false
+                        aoEscolher(treino)
                     },
                 )
-                treinos.forEach { treino ->
-                    DropdownMenuItem(
-                        text = { Text(treino.nome) },
-                        onClick = {
-                            aoEscolher(treino.id)
-                            aberto = false
-                        },
-                        trailingIcon = if (treinoAtual?.id == treino.id) {
-                            { Icon(Icons.Default.Check, contentDescription = null) }
-                        } else {
-                            null
-                        },
-                    )
-                }
             }
+            if (todosTreinos.isNotEmpty()) {
+                HorizontalDivider()
+            }
+            DropdownMenuItem(
+                text = { Text("Descanso (sem treino)") },
+                trailingIcon = {
+                    if (treinoAtual == null) {
+                        Icon(Icons.Default.Check, contentDescription = null)
+                    }
+                },
+                onClick = {
+                    menuAberto = false
+                    aoEscolher(null)
+                },
+            )
         }
     }
 }

@@ -28,8 +28,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,7 +36,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -56,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
@@ -71,6 +69,7 @@ import com.daniel.treino.TreinoApp
 import com.daniel.treino.data.db.SerieDaSessao
 import com.daniel.treino.data.repository.SessaoRepository
 import com.daniel.treino.timer.DescansoTimer
+import com.daniel.treino.ui.components.EmblemaTreino
 import com.daniel.treino.ui.components.formatarCarga
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
@@ -202,13 +201,21 @@ fun SessaoScreen(voltar: () -> Unit) {
             Column {
                 TopAppBar(
                     title = {
-                        Column {
-                            Text(ui.nome, style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                "${ui.feitas} de ${ui.total} séries concluídas",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            EmblemaTreino(
+                                id = ui.treinoId,
+                                nome = ui.nome,
+                                tamanho = 36.dp
                             )
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(ui.nome, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    "${ui.feitas} de ${ui.total} séries feitas",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     },
                     navigationIcon = {
@@ -236,12 +243,16 @@ fun SessaoScreen(voltar: () -> Unit) {
                 )
                 LinearProgressIndicator(
                     progress = { progresso },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
                 )
             }
         },
         bottomBar = {
-            Surface(tonalElevation = 3.dp) {
+            Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
                 Column(modifier = Modifier.navigationBarsPadding()) {
                     BarraDescanso(
                         inicio = inicioDescanso,
@@ -251,26 +262,22 @@ fun SessaoScreen(voltar: () -> Unit) {
                         aoAdicionar = vm::adicionarDescanso,
                         aoPular = vm::pularDescanso
                     )
-                    HorizontalDivider()
-                    Row(
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+                    TextButton(
+                        onClick = {
+                            if (ui.feitas < ui.total) {
+                                confirmar = "concluir"
+                            } else {
+                                vm.concluir()
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.End
+                            .height(52.dp)
                     ) {
-                        Button(
-                            onClick = {
-                                if (ui.feitas < ui.total) {
-                                    confirmar = "concluir"
-                                } else {
-                                    vm.concluir()
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Filled.Check, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Concluir treino")
-                        }
+                        Text("Concluir treino", style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
@@ -322,9 +329,9 @@ fun SessaoScreen(voltar: () -> Unit) {
         "descartar" -> AlertDialog(
             onDismissRequest = { confirmar = null },
             title = { Text("Descartar treino?") },
-            text = { Text("Nada desta sessão será salvo no histórico.") },
+            text = { Text("Esta sessão será apagada e não entra nos relatórios.") },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         confirmar = null
                         vm.descartar()
@@ -348,22 +355,15 @@ private fun GrupoExercicioCard(
     aoSalvar: (Long, String, String, Boolean) -> Unit
 ) {
     val todasFeitas = grupo.series.isNotEmpty() && grupo.series.all { it.concluida }
-    val corContainer by animateColorAsState(
-        targetValue = if (todasFeitas) {
-            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)
-        } else {
-            MaterialTheme.colorScheme.surface
-        },
-        label = "corGrupo"
-    )
 
-    OutlinedCard(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.outlinedCardColors(containerColor = corContainer)
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -373,7 +373,7 @@ private fun GrupoExercicioCard(
                 )
                 Text(
                     "${grupo.series.count { it.concluida }}/${grupo.series.size}",
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     color = if (todasFeitas) {
                         MaterialTheme.colorScheme.primary
                     } else {
@@ -381,7 +381,31 @@ private fun GrupoExercicioCard(
                     }
                 )
             }
-            Spacer(Modifier.height(2.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Série",
+                    modifier = Modifier.width(36.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "Reps",
+                    modifier = Modifier.weight(0.7f),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "Carga (kg)",
+                    modifier = Modifier.weight(1.1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.width(44.dp))
+            }
             grupo.series.forEach { serie ->
                 LinhaSerie(serie = serie, aoSalvar = aoSalvar)
             }
@@ -401,68 +425,102 @@ private fun LinhaSerie(
         mutableStateOf(serie.carga?.let { formatarCarga(it) } ?: "")
     }
 
+    val corFundoLinha by animateColorAsState(
+        targetValue = if (serie.concluida) {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        } else {
+            Color.Transparent
+        },
+        label = "corLinhaSerie"
+    )
     val corBadge by animateColorAsState(
         targetValue = if (serie.concluida) {
-            MaterialTheme.colorScheme.primary
+            MaterialTheme.colorScheme.onSurface
         } else {
-            MaterialTheme.colorScheme.surfaceContainerHighest
+            MaterialTheme.colorScheme.surfaceContainerHigh
         },
         label = "corBadgeSerie"
     )
     val corTextoBadge by animateColorAsState(
         targetValue = if (serie.concluida) {
-            MaterialTheme.colorScheme.onPrimary
+            MaterialTheme.colorScheme.surface
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         },
         label = "corTextoBadgeSerie"
     )
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = corFundoLinha,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
-            modifier = Modifier
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(corBadge),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.padding(vertical = 4.dp, horizontal = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                "${serie.ordem}",
-                style = MaterialTheme.typography.labelMedium,
-                color = corTextoBadge
-            )
-        }
-        OutlinedTextField(
-            value = reps,
-            onValueChange = {
-                reps = it
-                aoSalvar(serie.id, it, carga, serie.concluida)
-            },
-            label = { Text("Reps") },
-            modifier = Modifier.weight(1f),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
-        OutlinedTextField(
-            value = carga,
-            onValueChange = {
-                carga = it
-                aoSalvar(serie.id, reps, it, serie.concluida)
-            },
-            label = { Text("Carga") },
-            suffix = { Text("kg") },
-            modifier = Modifier.weight(1f),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-        )
-        Checkbox(
-            checked = serie.concluida,
-            onCheckedChange = { marcada ->
-                aoSalvar(serie.id, reps, carga, marcada)
+            Box(
+                modifier = Modifier.width(36.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(corBadge),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "${serie.ordem}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = corTextoBadge
+                    )
+                }
             }
-        )
+            OutlinedTextField(
+                value = reps,
+                onValueChange = {
+                    reps = it
+                    aoSalvar(serie.id, it, carga, serie.concluida)
+                },
+                modifier = Modifier.weight(0.7f),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+            OutlinedTextField(
+                value = carga,
+                onValueChange = {
+                    carga = it
+                    aoSalvar(serie.id, reps, it, serie.concluida)
+                },
+                modifier = Modifier.weight(1.1f),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+            )
+            Surface(
+                onClick = { aoSalvar(serie.id, reps, carga, !serie.concluida) },
+                shape = CircleShape,
+                color = if (serie.concluida) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                },
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = if (serie.concluida) "Desmarcar série" else "Concluir série",
+                        tint = if (serie.concluida) {
+                            MaterialTheme.colorScheme.surface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
     }
 }
