@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.util.Log
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +45,7 @@ class GerenciadorBackup(
 
     init {
         val destinoStr = prefs.getString("destino", null)
-        val destinoUri = destinoStr?.let { Uri.parse(it) }
+        val destinoUri = destinoStr?.toUri()
         val ultimo = prefs.getLong("ultimo_backup", -1L).takeIf { it > 0L }
 
         _estado = MutableStateFlow(
@@ -76,7 +78,7 @@ class GerenciadorBackup(
     }
 
     fun definirAutomatico(ativo: Boolean) {
-        prefs.edit().putBoolean("automatico", ativo).apply()
+        prefs.edit { putBoolean("automatico", ativo) }
         _estado.update { it.copy(automatico = ativo) }
     }
 
@@ -107,11 +109,11 @@ class GerenciadorBackup(
             else -> "em outro app de arquivos"
         }
 
-        prefs.edit()
-            .putString("destino", uri.toString())
-            .putString("nome", nome)
-            .putString("local", local)
-            .apply()
+        prefs.edit {
+            putString("destino", uri.toString())
+            putString("nome", nome)
+            putString("local", local)
+        }
 
         _estado.update {
             it.copy(
@@ -151,10 +153,10 @@ class GerenciadorBackup(
                     }
                 }
                 val agora = System.currentTimeMillis()
-                prefs.edit()
-                    .putLong("ultimo_backup", agora)
-                    .remove("erro")
-                    .apply()
+                prefs.edit {
+                    putLong("ultimo_backup", agora)
+                    remove("erro")
+                }
                 _estado.update {
                     it.copy(
                         ultimoBackup = agora,
@@ -170,7 +172,7 @@ class GerenciadorBackup(
                 } else {
                     "Não foi possível salvar no arquivo de backup."
                 }
-                prefs.edit().putString("erro", msg).apply()
+                prefs.edit { putString("erro", msg) }
                 _estado.update {
                     it.copy(
                         destinoPermanente = if (e is SecurityException) false else it.destinoPermanente,
