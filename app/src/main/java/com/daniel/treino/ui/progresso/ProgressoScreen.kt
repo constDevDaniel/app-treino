@@ -35,8 +35,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.SavedStateHandle
@@ -63,31 +67,26 @@ import com.daniel.treino.ui.components.formatarVolume
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
+import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLineComponent
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
-import com.patrykandpatrick.vico.compose.cartesian.layer.point
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
+import com.patrykandpatrick.vico.compose.cartesian.data.columnModel
+import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
+import com.patrykandpatrick.vico.compose.cartesian.layer.CartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.layer.ColumnCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.common.Fill
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
-import com.patrykandpatrick.vico.compose.common.fill
-import com.patrykandpatrick.vico.compose.common.shader.verticalGradient
-import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
-import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
-import com.patrykandpatrick.vico.core.cartesian.data.columnSeries
-import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-import com.patrykandpatrick.vico.core.cartesian.layer.ColumnCartesianLayer
-import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
-import com.patrykandpatrick.vico.core.common.data.ExtraStore
-import com.patrykandpatrick.vico.core.common.shader.ShaderProvider
-import com.patrykandpatrick.vico.core.common.shape.CorneredShape
+import com.patrykandpatrick.vico.compose.common.data.ExtraStore
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -458,21 +457,21 @@ private fun GraficoEvolucao(dados: List<EvolucaoCarga>) {
             )
         }
         producer.runTransaction {
-            lineSeries { series(xs, ys) }
+            lineModel { series(xs, ys) }
             extras { it[ChaveRotulos] = rotulos }
         }
     }
 
     val corPrimaria = MaterialTheme.colorScheme.primary
-    val ponto = rememberShapeComponent(fill(corPrimaria), CorneredShape.Pill)
+    val ponto = rememberShapeComponent(Fill(corPrimaria), CircleShape)
     val camada = rememberLineCartesianLayer(
         LineCartesianLayer.LineProvider.series(
             LineCartesianLayer.rememberLine(
-                fill = LineCartesianLayer.LineFill.single(fill(corPrimaria)),
+                fill = LineCartesianLayer.LineFill.single(Fill(corPrimaria)),
                 areaFill = LineCartesianLayer.AreaFill.single(
-                    fill(
-                        ShaderProvider.verticalGradient(
-                            arrayOf(
+                    Fill(
+                        Brush.verticalGradient(
+                            listOf(
                                 corPrimaria.copy(alpha = 0.32f),
                                 corPrimaria.copy(alpha = 0.0f)
                             )
@@ -480,7 +479,7 @@ private fun GraficoEvolucao(dados: List<EvolucaoCarga>) {
                     )
                 ),
                 pointProvider = LineCartesianLayer.PointProvider.single(
-                    LineCartesianLayer.point(ponto, size = 8.dp)
+                    LineCartesianLayer.Point(ponto, size = 8.dp)
                 )
             )
         )
@@ -501,16 +500,16 @@ private fun GraficoVolume(dados: List<VolumeSemanal>) {
     LaunchedEffect(dados) {
         val rotulos = dados.map { "S" + it.semana.substringAfter('-') }
         producer.runTransaction {
-            columnSeries { series(dados.map { it.volume }) }
+            columnModel { series(dados.map { it.volume }) }
             extras { it[ChaveRotulos] = rotulos }
         }
     }
 
     val corPrimaria = MaterialTheme.colorScheme.primary
     val coluna = rememberLineComponent(
-        fill = fill(corPrimaria),
+        fill = Fill(corPrimaria),
         thickness = 18.dp,
-        shape = CorneredShape.rounded(topLeftPercent = 30, topRightPercent = 30)
+        shape = RoundedCornerShape(topStartPercent = 30, topEndPercent = 30)
     )
     val camada = rememberColumnCartesianLayer(
         ColumnCartesianLayer.ColumnProvider.series(coluna)
@@ -526,14 +525,14 @@ private fun GraficoVolume(dados: List<VolumeSemanal>) {
 }
 
 @Composable
-private fun graficoPadrao(camada: com.patrykandpatrick.vico.core.cartesian.layer.CartesianLayer<*>) =
+private fun graficoPadrao(camada: CartesianLayer<*>) =
     rememberCartesianChart(
         camada,
         startAxis = VerticalAxis.rememberStart(
             label = eixoBase().first,
             line = eixoBase().second,
             guideline = rememberAxisGuidelineComponent(
-                fill = fill(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                fill = Fill(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             )
         ),
         bottomAxis = HorizontalAxis.rememberBottom(
@@ -547,10 +546,12 @@ private fun graficoPadrao(camada: com.patrykandpatrick.vico.core.cartesian.layer
 @Composable
 private fun eixoBase() =
     rememberAxisLabelComponent(
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textSize = 11.sp
+        style = TextStyle(
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.sp
+        )
     ) to rememberAxisLineComponent(
-        fill = fill(MaterialTheme.colorScheme.outlineVariant)
+        fill = Fill(MaterialTheme.colorScheme.outlineVariant)
     )
 
 @Composable
