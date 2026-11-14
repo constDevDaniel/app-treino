@@ -23,8 +23,9 @@ Sempre que uma nova atualização é enviada para a branch `main`, o GitHub Acti
 
 ## Stack Tecnológica
 
-- **Linguagem**: Kotlin 2.1.0 (JDK 17)
+- **Linguagem**: Kotlin 2.4.21 (JDK 17)
+- **Build**: AGP 9.5.1, Gradle 9.9.1
 - **UI**: Jetpack Compose (Material 3, Navigation Compose, tipografia Barlow / Barlow Condensed)
-- ** Persistência**: Room 2.6.1 (SQLite + KSP + Coroutines Flow)
-- **Gráficos**: Vico Charts (`compose-m3` 2.0.0)
-- **SDK**: `minSdk = 26`, `targetSdk = 35`, `compileSdk = 35`
+- **Persistência**: Room 2.8.5 (SQLite + KSP + Coroutines Flow)
+- **Gráficos**: Vico Charts (`compose-m3` 3.3.1)
+- **SDK**: `minSdk = 26`, `targetSdk = 37`, `compileSdk = 37`

@@ -12,7 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.daniel.treino"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         versionCode = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 3
         versionName = (project.findProperty("versionName") as String?) ?: "0.3.0"
     }
