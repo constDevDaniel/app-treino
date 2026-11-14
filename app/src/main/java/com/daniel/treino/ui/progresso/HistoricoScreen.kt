@@ -123,7 +123,7 @@ fun HistoricoScreen(voltar: () -> Unit) {
     if (alvo != null) {
         AlertDialog(
             onDismissRequest = { confirmandoId = null },
-            icon = { EmblemaTreino(alvo.treinoId, alvo.nomeTreino, tamanho = 48.dp) },
+            icon = { EmblemaTreino(treinoId = alvo.treinoId, nome = alvo.nomeTreino, tamanho = 48.dp) },
             title = { Text("Excluir ${alvo.nomeTreino}?") },
             text = {
                 Text(
@@ -168,7 +168,7 @@ private fun CartaoSessaoHistorico(
             modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 6.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            EmblemaTreino(sessao.treinoId, sessao.nomeTreino, tamanho = 44.dp)
+            EmblemaTreino(treinoId = sessao.treinoId, nome = sessao.nomeTreino, tamanho = 44.dp)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(sessao.nomeTreino, style = MaterialTheme.typography.titleLarge)
