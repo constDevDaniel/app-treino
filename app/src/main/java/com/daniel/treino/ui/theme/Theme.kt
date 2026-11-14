@@ -108,21 +108,21 @@ private fun estiloCorpo(
 )
 
 val TipografiaTreino = Typography(
-    displayLarge = estiloDisplay(72, 72, FontWeight.Bold),
-    displayMedium = estiloDisplay(56, 58, FontWeight.Bold),
-    displaySmall = estiloDisplay(44, 48, FontWeight.Bold),
-    headlineLarge = estiloDisplay(36, 40, FontWeight.Bold),
-    headlineMedium = estiloDisplay(30, 34, FontWeight.Bold),
-    headlineSmall = estiloDisplay(26, 30, FontWeight.SemiBold),
-    titleLarge = estiloDisplay(24, 28, FontWeight.SemiBold),
-    titleMedium = estiloCorpo(17, 24, FontWeight.SemiBold),
-    titleSmall = estiloCorpo(15, 20, FontWeight.SemiBold),
-    bodyLarge = estiloCorpo(16, 24, FontWeight.Normal),
-    bodyMedium = estiloCorpo(14, 20, FontWeight.Normal),
-    bodySmall = estiloCorpo(13, 18, FontWeight.Normal),
-    labelLarge = estiloCorpo(15, 20, FontWeight.SemiBold),
-    labelMedium = estiloCorpo(13, 16, FontWeight.Medium),
-    labelSmall = estiloCorpo(12, 16, FontWeight.Medium),
+    displayLarge = estiloDisplay(64, 66, FontWeight.Bold),
+    displayMedium = estiloDisplay(48, 54, FontWeight.Bold),
+    displaySmall = estiloDisplay(40, 44, FontWeight.Bold),
+    headlineLarge = estiloDisplay(32, 35, FontWeight.Bold),
+    headlineMedium = estiloDisplay(26, 30, FontWeight.Bold),
+    headlineSmall = estiloDisplay(22, 25, FontWeight.SemiBold),
+    titleLarge = estiloDisplay(20, 23, FontWeight.SemiBold),
+    titleMedium = estiloCorpo(16, 20, FontWeight.SemiBold),
+    titleSmall = estiloCorpo(13, 16, FontWeight.SemiBold),
+    bodyLarge = estiloCorpo(15, 19, FontWeight.Normal),
+    bodyMedium = estiloCorpo(13, 16, FontWeight.Normal),
+    bodySmall = estiloCorpo(12, 14, FontWeight.Normal),
+    labelLarge = estiloCorpo(14, 16, FontWeight.SemiBold),
+    labelMedium = estiloCorpo(12, 14, FontWeight.Medium),
+    labelSmall = estiloCorpo(11, 13, FontWeight.Medium),
 )
 
 val FormasTreino = Shapes(

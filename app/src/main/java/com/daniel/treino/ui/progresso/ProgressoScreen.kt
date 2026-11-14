@@ -42,7 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -548,7 +547,7 @@ private fun eixoBase() =
     rememberAxisLabelComponent(
         style = TextStyle(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 11.sp
+            fontSize = MaterialTheme.typography.labelSmall.fontSize
         )
     ) to rememberAxisLineComponent(
         fill = Fill(MaterialTheme.colorScheme.outlineVariant)
