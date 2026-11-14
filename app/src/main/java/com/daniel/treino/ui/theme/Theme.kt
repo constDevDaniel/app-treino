@@ -38,7 +38,7 @@ private val EsquemaEscuro = darkColorScheme(
     onSurfaceVariant = Color(0xFF9A9DA3),
     surfaceTint = CorAmbar,
     error = Color(0xFFFF6B5E),
-    outline = Color(0xFF4A4D52),
+    outline = Color(0xFF6E7279),
     outlineVariant = Color(0xFF33363A),
     surfaceContainer = Color(0xFF222326),
     surfaceContainerHigh = Color(0xFF27292C),
@@ -48,7 +48,7 @@ private val EsquemaEscuro = darkColorScheme(
 )
 
 private val EsquemaClaro = lightColorScheme(
-    primary = Color(0xFF8A6A00),
+    primary = Color(0xFF7A5D00),
     onPrimary = Color.White,
     primaryContainer = CorAmbar,
     onPrimaryContainer = Color(0xFF1D1700),
@@ -64,7 +64,7 @@ private val EsquemaClaro = lightColorScheme(
     onSurface = Color(0xFF17181A),
     surfaceVariant = Color(0xFFDCDFE3),
     onSurfaceVariant = Color(0xFF5B5F66),
-    outline = Color(0xFF9A9DA3),
+    outline = Color(0xFF73777E),
     outlineVariant = Color(0xFFC9CCD1),
     surfaceContainer = Color(0xFFF2F3F5),
     surfaceContainerHigh = Color(0xFFE6E8EB),
