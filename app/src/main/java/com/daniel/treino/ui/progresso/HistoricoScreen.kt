@@ -1,10 +1,12 @@
 package com.daniel.treino.ui.progresso
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -13,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,6 +47,7 @@ import com.daniel.treino.TreinoApp
 import com.daniel.treino.data.db.SessaoHistorico
 import com.daniel.treino.data.repository.SessaoRepository
 import com.daniel.treino.ui.components.EmblemaTreino
+import com.daniel.treino.ui.components.EstadoVazio
 import com.daniel.treino.ui.components.Formatadores
 import com.daniel.treino.ui.components.PtBr
 import java.time.Instant
@@ -96,16 +100,18 @@ fun HistoricoScreen(voltar: () -> Unit) {
     ) { padding ->
         val lista = sessoes ?: return@Scaffold
         LazyColumn(
-            modifier = Modifier.padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (lista.isEmpty()) {
                 item {
-                    Text(
-                        "Nenhum treino concluído ainda.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    EstadoVazio(
+                        icone = Icons.Outlined.History,
+                        titulo = "Nenhum treino concluído",
+                        mensagem = "Quando você finalizar um treino, ele aparecerá aqui."
                     )
                 }
             }
@@ -162,7 +168,8 @@ private fun CartaoSessaoHistorico(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 6.dp, bottom = 12.dp),

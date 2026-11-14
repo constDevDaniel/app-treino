@@ -1,10 +1,13 @@
 package com.daniel.treino.ui.treinos
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -98,6 +101,7 @@ fun TreinosScreen(
     var editandoExercicio by remember { mutableStateOf<Exercicio?>(null) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = aoCriar,
@@ -110,7 +114,9 @@ fun TreinosScreen(
     ) { padding ->
         val lista = treinos ?: return@Scaffold
         LazyColumn(
-            modifier = Modifier.padding(padding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
             contentPadding = PaddingValues(
                 start = 20.dp,
                 top = 20.dp,
@@ -148,7 +154,8 @@ fun TreinosScreen(
                         .fillMaxWidth()
                         .animateItem(),
                     shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainer
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -204,7 +211,11 @@ fun TreinosScreen(
             if (exercicios.isNotEmpty()) {
                 item {
                     Spacer(Modifier.height(8.dp))
-                    Text("Exercícios", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Exercícios",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Text(
                         "Renomear aqui vale para todos os treinos e para o histórico.",
                         style = MaterialTheme.typography.bodySmall,

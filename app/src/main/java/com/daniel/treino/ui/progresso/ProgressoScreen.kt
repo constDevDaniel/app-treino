@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -41,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -122,7 +124,7 @@ class ProgressoViewModel(
     dao: RelatoriosDao
 ) : ViewModel() {
     private val periodo = savedStateHandle.getStateFlow("periodo", 0)
-        .map { Periodo.entries[it] }
+        .map { Periodo.entries.getOrElse(it) { Periodo.Mes } }
     private val exercicioId = savedStateHandle.getStateFlow("exercicio", -1L)
 
     private val dadosPeriodo = periodo.flatMapLatest { p ->
@@ -202,7 +204,12 @@ private val FormatoDataRecorde: DateTimeFormatter =
     DateTimeFormatter.ofPattern("dd/MM/yy", PtBr)
 
 private val FormatadorRotulos = CartesianValueFormatter { contexto, x, _ ->
-    contexto.model.extraStore.getOrNull(ChaveRotulos)?.getOrNull(x.toInt())?.takeIf { it.isNotEmpty() } ?: " "
+    val indice = if (x.isFinite()) x.toInt() else -1
+    contexto.model.extraStore
+        .getOrNull(ChaveRotulos)
+        ?.getOrNull(indice)
+        ?.takeIf { it.isNotBlank() }
+        ?: "–"
 }
 
 @Composable
@@ -211,7 +218,8 @@ fun ProgressoScreen(abrirHistorico: () -> Unit) {
     val ui by vm.ui.collectAsStateWithLifecycle()
 
     LazyColumn(
-        contentPadding = PaddingValues(20.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -237,7 +245,13 @@ fun ProgressoScreen(abrirHistorico: () -> Unit) {
                         onClick = { vm.selecionarPeriodo(p) },
                         shape = SegmentedButtonDefaults.itemShape(index, Periodo.entries.size)
                     ) {
-                        Text(p.rotulo)
+                        Text(
+                            text = p.rotulo,
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
@@ -358,7 +372,8 @@ private fun CartaoSecao(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Text(titulo, style = MaterialTheme.typography.titleMedium)
@@ -378,7 +393,8 @@ private fun CartaoNumero(rotulo: String, valor: String, modifier: Modifier = Mod
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text(
@@ -405,16 +421,30 @@ private fun SeletorExercicio(
     var expandido by remember { mutableStateOf(false) }
 
     Box {
-        TextButton(onClick = { expandido = true }) {
-            Text(
-                text = selecionado?.nome ?: "",
-                style = MaterialTheme.typography.titleSmall
-            )
-            Spacer(Modifier.width(4.dp))
-            Icon(
-                imageVector = Icons.Filled.ArrowDropDown,
-                contentDescription = "Selecionar exercício"
-            )
+        Surface(
+            onClick = { expandido = true },
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Row(
+                modifier = Modifier.padding(start = 14.dp, top = 8.dp, end = 10.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = selecionado?.nome ?: "",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.width(6.dp))
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = "Selecionar exercício",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
         DropdownMenu(
             expanded = expandido,
@@ -435,24 +465,25 @@ private fun SeletorExercicio(
 
 @Composable
 private fun GraficoEvolucao(dados: List<EvolucaoCarga>) {
-    if (dados.isEmpty()) {
+    val pontosValidos = remember(dados) { dados.filter { it.cargaMaxima.isFinite() } }
+    if (pontosValidos.isEmpty()) {
         GraficoVazio()
         return
     }
     val producer = remember { CartesianChartModelProducer() }
-    LaunchedEffect(dados) {
-        val (xs, ys, rotulos) = if (dados.size == 1) {
-            val d = dados.first()
+    LaunchedEffect(pontosValidos) {
+        val (xs, ys, rotulos) = if (pontosValidos.size == 1) {
+            val d = pontosValidos.first()
             Triple(
                 listOf(0, 1, 2),
                 listOf(d.cargaMaxima, d.cargaMaxima, d.cargaMaxima),
-                listOf("", formatarDataCurta(d.inicio), "")
+                listOf("–", formatarDataCurta(d.inicio), "–")
             )
         } else {
             Triple(
-                dados.indices.toList(),
-                dados.map { it.cargaMaxima },
-                dados.map { formatarDataCurta(it.inicio) }
+                pontosValidos.indices.toList(),
+                pontosValidos.map { it.cargaMaxima },
+                pontosValidos.map { formatarDataCurta(it.inicio) }
             )
         }
         producer.runTransaction {
@@ -495,11 +526,16 @@ private fun GraficoEvolucao(dados: List<EvolucaoCarga>) {
 
 @Composable
 private fun GraficoVolume(dados: List<VolumeSemanal>) {
+    val semanasValidas = remember(dados) { dados.filter { it.volume.isFinite() } }
+    if (semanasValidas.isEmpty()) {
+        GraficoVazio()
+        return
+    }
     val producer = remember { CartesianChartModelProducer() }
-    LaunchedEffect(dados) {
-        val rotulos = dados.map { "S" + it.semana.substringAfter('-') }
+    LaunchedEffect(semanasValidas) {
+        val rotulos = semanasValidas.map { "S" + it.semana.substringAfter('-') }
         producer.runTransaction {
-            columnModel { series(dados.map { it.volume }) }
+            columnModel { series(semanasValidas.map { it.volume }) }
             extras { it[ChaveRotulos] = rotulos }
         }
     }
@@ -524,23 +560,25 @@ private fun GraficoVolume(dados: List<VolumeSemanal>) {
 }
 
 @Composable
-private fun graficoPadrao(camada: CartesianLayer<*>) =
-    rememberCartesianChart(
+private fun graficoPadrao(camada: CartesianLayer<*>): com.patrykandpatrick.vico.compose.cartesian.CartesianChart {
+    val (rotuloEixo, linhaEixo) = eixoBase()
+    return rememberCartesianChart(
         camada,
         startAxis = VerticalAxis.rememberStart(
-            label = eixoBase().first,
-            line = eixoBase().second,
+            label = rotuloEixo,
+            line = linhaEixo,
             guideline = rememberAxisGuidelineComponent(
                 fill = Fill(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             )
         ),
         bottomAxis = HorizontalAxis.rememberBottom(
-            label = eixoBase().first,
-            line = eixoBase().second,
+            label = rotuloEixo,
+            line = linhaEixo,
             guideline = null,
             valueFormatter = FormatadorRotulos
         )
     )
+}
 
 @Composable
 private fun eixoBase() =
