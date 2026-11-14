@@ -2,6 +2,7 @@ package com.daniel.treino.ui.agenda
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ import com.daniel.treino.TreinoApp
 import com.daniel.treino.data.db.Treino
 import com.daniel.treino.ui.components.EmblemaTreino
 import com.daniel.treino.ui.components.Formatadores
+import com.daniel.treino.ui.components.escalaPressao
 import java.time.LocalDate
 import java.time.format.TextStyle
 
@@ -107,6 +109,7 @@ private fun LinhaDia(
     aoEscolher: (Treino?) -> Unit,
 ) {
     var menuAberto by remember { mutableStateOf(false) }
+    val interacao = remember { MutableInteractionSource() }
     val nomeDia = remember(diaSemana) {
         Formatadores.nomeDiaSemana(diaSemana, TextStyle.FULL)
     }
@@ -114,6 +117,7 @@ private fun LinhaDia(
     Box(modifier = Modifier.fillMaxWidth()) {
         Surface(
             onClick = { menuAberto = true },
+            interactionSource = interacao,
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surfaceContainer,
             border = if (ehHoje) {
@@ -121,7 +125,9 @@ private fun LinhaDia(
             } else {
                 BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .escalaPressao(interacao),
         ) {
             Row(
                 modifier = Modifier
@@ -133,11 +139,11 @@ private fun LinhaDia(
                     EmblemaTreino(
                         treinoId = treinoAtual.id,
                         nome = treinoAtual.nome,
-                        tamanho = 40.dp,
+                        tamanho = 44.dp,
                     )
                 } else {
                     Box(
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(44.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(
@@ -159,7 +165,7 @@ private fun LinhaDia(
                     )
                     Text(
                         text = treinoAtual?.nome ?: "Descanso",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = if (treinoAtual == null) {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else {
